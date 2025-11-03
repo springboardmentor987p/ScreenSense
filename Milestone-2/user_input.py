@@ -3,7 +3,6 @@ def get_user_input():
     print("\n" + "="*70)
     print("🎯 SCREEN TIME RECOMMENDATION SYSTEM - USER INPUT")
     print("="*70)
-    print("\n")
 
     # Get Age
     while True:
