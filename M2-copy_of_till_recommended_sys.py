@@ -274,39 +274,36 @@ class ScreenTimeRecommendationSystem:
 
         # Health-based recommendations
         if severity == 'Healthy':
-            recommendations.append("✅ Great job! Your screen time is within healthy limits.")
-            recommendations.append("💡 Continue maintaining a balanced digital lifestyle.")
+            recommendations.append(" Good")
+            recommendations.append("Continue lifestyle.")
         elif severity == 'Moderate':
-            recommendations.append(f"⚠️ Your screen time exceeds recommendations by {exceeds_by:.1f} hours/day.")
-            recommendations.append("💡 Try reducing screen time gradually by 15-30 minutes per week.")
+            recommendations.append(f"Your screen time exceeds recommendations by {exceeds_by:.1f} hours/day.")
+            recommendations.append("Try to reduce screentime by 15-30 minutes per week.")
         elif severity == 'High':
-            recommendations.append(f"⚠️ WARNING: Screen time significantly exceeds recommendations by {exceeds_by:.1f} hours/day.")
-            recommendations.append("💡 Immediate action needed: Reduce screen time by at least 1 hour daily.")
+            recommendations.append(f"WARNING: Screen time significantly exceeds recommendations by {exceeds_by:.1f} hours/day.")
+            recommendations.append("Immediate action needed: Reduce screen time by at least 1 hour daily.")
         else:  # Critical
-            recommendations.append(f"🚨 CRITICAL: Screen time is {exceeds_by:.1f} hours ABOVE recommendations!")
-            recommendations.append("💡 URGENT: Reduce screen time by 2-3 hours immediately and seek professional guidance.")
+            recommendations.append(f"CRITICAL: Screen time is {exceeds_by:.1f} hours ABOVE recommendations!")
+            recommendations.append("URGENT: Reduce screen time by 2-3 hours immediately and seek professional guidance.")
 
         # Device-specific recommendations
         device_tips = {
             'Smartphone': [
-                "📱 Enable screen time limits using built-in features",
-                "📱 Move distracting apps to folders or remove from home screen",
-                "📱 Use grayscale mode to reduce appeal"
+                "Enable screen time limits using built-in features",
+                "Move distracting apps to folders or remove from home screen",
+                "Use grayscale mode to reduce appeal"
             ],
             'Laptop': [
-                "💻 Use website blockers during study/work hours",
-                "💻 Practice the 20-20-20 rule: Every 20 mins, look 20 feet away for 20 seconds",
-                "💻 Set specific time blocks for laptop use"
+                "Use website blockers during study/work hours",
+                "Practice the 20-20-20 rule: Every 20 mins, look 20 feet away for 20 seconds",
+                "Set specific time blocks for laptop use"
             ],
             'TV': [
-                "📺 Avoid binge-watching; set episode limits",
-                "📺 Remove TV from bedroom to improve sleep",
-                "📺 Plan viewing schedule in advance"
+                "Avoid binge-watching; set episode limits",
             ],
             'Tablet': [
-                "📋 Use parental controls to limit usage time",
-                "📋 Encourage educational apps over games",
-                "📋 Keep tablets in common areas, not bedrooms"
+                "Use parental controls to limit usage time",
+                "Keep tablets in common areas, not bedrooms"
             ]
         }
 
@@ -315,26 +312,26 @@ class ScreenTimeRecommendationSystem:
         # Age-specific recommendations
         if age <= 10:
             recommendations.extend([
-                "👶 Prioritize outdoor play and physical activities",
-                "👶 Encourage creative activities like drawing and building",
-                "👶 Co-view content with parents when possible"
+                "Prioritize outdoor play and physical activities",
+                "Encourage creative activities like drawing and building",
+                "Co-view content with parents when possible"
             ])
         elif age <= 14:
             recommendations.extend([
-                "👦 Balance screen time with hobbies and sports",
-                "👦 Set homework completion before recreational screen time",
-                "👦 Discuss online safety and digital citizenship"
+                "Balance screen time with hobbies and sports",
+                "Set homework completion before recreational screen time",
+                "Discuss online safety and digital citizenship"
             ])
         else:
             recommendations.extend([
-                "👨 Practice self-regulation and time management",
-                "👨 Use productivity apps to track and limit usage",
-                "👨 Engage in social activities without screens"
+                "Practice self-regulation and time management",
+                "Use productivity apps to track and limit usage",
+                "Engage in social activities without screens"
             ])
 
         # General health recommendations
         recommendations.extend([
-            "🏥 HEALTH TIPS:",
+            "HEALTH TIPS:",
             "• Follow the 20-20-20 rule to prevent eye strain",
             "• Maintain proper posture while using devices",
             "• Avoid screens 1 hour before bedtime",
@@ -355,10 +352,10 @@ class ScreenTimeRecommendationSystem:
         return stats
     def display_analysis(self, analysis, recommendations):
         print("="*70)
-        print("📊 PERSONALIZED SCREEN TIME ANALYSIS REPORT")
+        print("PERSONALIZED SCREEN TIME ANALYSIS REPORT")
         print("="*70)
 
-        print(f"👤 User Profile:")
+        print(f" User Profile:")
         print(f"   Age: {analysis['age']} years ({analysis['age_group']})")
         print(f"   Gender: {analysis['gender']}")
         print(f"   Primary Device: {analysis['device']}")
@@ -369,9 +366,9 @@ class ScreenTimeRecommendationSystem:
         print(f"   Recommended Limit: {analysis['recommended_limit']:.2f} hours/day\n")
 
         if analysis['exceeds_by'] > 0:
-            print(f"   ⚠️  Exceeds by: {analysis['exceeds_by']:.2f} hours/day")
+            print(f"Exceeds by: {analysis['exceeds_by']:.2f} hours/day")
         else:
-            print(f"   ✅ Within limit by: {abs(analysis['exceeds_by']):.2f} hours/day")
+            print(f"Within limit by: {abs(analysis['exceeds_by']):.2f} hours/day")
 
         print(f"   Severity Level: {analysis['severity']}")
 
@@ -622,7 +619,7 @@ new_analysis, new_recs = analyze_case(rec_system)
 # plot_peer_comparison(new_analysis) # These functions are not defined in the notebook
 # create_dashboard(new_analysis, rec_system.data) # These functions are not defined in the notebook
 
-print("\n✅ All analysis complete!")
+print("\n SUCCESSFUL REPORT")
 
 df.to_csv("Cleaned_Indian_Kids_Screen_Time.csv", index=False)
 print("Cleaned file saved successfully!")
