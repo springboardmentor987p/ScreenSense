@@ -151,7 +151,7 @@ const PowerBIDashboard = () => {
         {/* Download button - centered */}
         <div style={{ textAlign: 'center' }}>
           <a
-            href="/path-to-your-pbix-file.pbix"
+            href="/indian-kids-screen-time.pbix"
             download
             className="btn"
             style={{ display: 'inline-block', textDecoration: 'none' }}
