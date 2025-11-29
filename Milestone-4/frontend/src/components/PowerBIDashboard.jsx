@@ -151,14 +151,17 @@ const PowerBIDashboard = () => {
         {/* Download button - centered */}
         <div style={{ textAlign: 'center' }}>
           <a
-            href="/indian-kids-screen-time.pbix"
-            download
+            href="https://drive.google.com/uc?export=download&id=189Yzpwj4AVgimOAJOYj3LrNqVvvhXYKt"
+            download="indian-kids-screen-time.pbix"
             className="btn"
             style={{ display: 'inline-block', textDecoration: 'none' }}
+            target="_blank"
+            rel="noopener noreferrer"
           >
             ⬇️ Download Power BI Report (.pbix)
           </a>
         </div>
+
 
         {/* Instructions - aligned at 38% */}
         <div className="input-aligned" style={{ marginTop: '24px' }}>
