@@ -27,7 +27,7 @@ const InputForm = ({ onSubmit, loading }) => {
     } else {
       setFormData(prev => ({
         ...prev,
-        [name]: type === 'number' ? parseFloat(value) : value
+        [name]: type === 'number' ? parseFloat(value || 0) : value
       }));
     }
   };
@@ -118,7 +118,7 @@ const InputForm = ({ onSubmit, loading }) => {
             name="educational_hours"
             min="0"
             max="24"
-            step="0.5"
+            step="0.01"
             value={formData.educational_hours}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -136,7 +136,7 @@ const InputForm = ({ onSubmit, loading }) => {
             name="recreational_hours"
             min="0"
             max="24"
-            step="0.5"
+            step="0.01"
             value={formData.recreational_hours}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
