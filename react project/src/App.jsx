@@ -5,6 +5,7 @@ import Sidebar from './Sidebar'
 import Home from './Home'
 import Advisor from './Advisor'
 import Dashboard from './Dashboard'
+import Feedback from './Feedback'
 
 function App() {
   const [route, setRoute] = useState('home')
@@ -34,6 +35,7 @@ function App() {
           {route === 'home' && <Home onSubmit={handleSubmit} onNavigate={handleNav} />}
           {route === 'advisor' && <Advisor data={formData} onBack={() => setRoute('home')} />}
           {route === 'dashboard' && <Dashboard />}
+          {route === 'feedback' && <Feedback onBack={() => setRoute('home')} />}
         </section>
       </main>
     </div>

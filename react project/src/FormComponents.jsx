@@ -50,8 +50,11 @@ export default function FormComponents({ onSubmit }) {
     // explicitly configured. This avoids accidental network calls if you
     // removed or don't run a backend (e.g., you deleted `backend_sample`).
     const backendUrl = import.meta.env.VITE_BACKEND_URL
+    console.log('FormComponents: backendUrl from env:', backendUrl)
+    console.log('FormComponents: sendAssessment function exists:', typeof sendAssessment === 'function')
     if (backendUrl && typeof sendAssessment === 'function') {
       try {
+        console.log('FormComponents: Calling sendAssessment with payload:', payload)
         const resp = await sendAssessment(payload)
         console.info('Assessment sent to backend:', resp)
         // Pass server response along to the app so it can render server-generated recommendations
@@ -63,6 +66,8 @@ export default function FormComponents({ onSubmit }) {
         if (onSubmit) onSubmit(payload)
         return
       }
+    } else {
+      console.warn('FormComponents: Skipping backend call - backendUrl:', backendUrl, 'sendAssessment:', typeof sendAssessment)
     }
 
     if (onSubmit) onSubmit(payload)

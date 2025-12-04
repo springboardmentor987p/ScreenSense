@@ -75,11 +75,16 @@ class InputPayload(BaseModel):
 
 @app.post("/insights")
 def get_insights(payload: InputPayload):
+    print(f"DEBUG: Received insights request with payload: {payload}")
     engine = get_engine()
     user = payload.dict()
+    print(f"DEBUG: User data: {user}")
     exceeded, insights, details = engine.generate_insights(user)
-    return {
+    print(f"DEBUG: Generated insights: {insights}")
+    result = {
         "exceeded_recommended_limit": exceeded,
         "insights": insights,
         "details": details,
     }
+    print(f"DEBUG: Returning result: {result}")
+    return result
