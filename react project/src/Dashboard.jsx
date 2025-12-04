@@ -33,6 +33,10 @@ function eduFractionFromRatio(r) {
 export default function Dashboard() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedGender, setSelectedGender] = useState('All')
+  const [selectedDevice, setSelectedDevice] = useState('All')
+  const [selectedUrbanRural, setSelectedUrbanRural] = useState('All')
+  const [hoveredBar, setHoveredBar] = useState(null)
 
   useEffect(() => {
     const backend = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'
@@ -53,19 +57,31 @@ export default function Dashboard() {
       .finally(() => setLoading(false))
   }, [])
 
-  // ===== Aggregations =====
+  // Apply filters
+  const filteredRows = rows.filter((r) => {
+    const genderMatch = selectedGender === 'All' || r.Gender === selectedGender
+    const deviceMatch = selectedDevice === 'All' || r.Primary_Device === selectedDevice
+    const urbanMatch = selectedUrbanRural === 'All' || r.Urban_or_Rural === selectedUrbanRural
+    return genderMatch && deviceMatch && urbanMatch
+  })
 
-  // 1. By Age
+  // Get unique values for filters
+  const genders = ['All', ...new Set(rows.map((r) => r.Gender).filter(Boolean))]
+  const devices = ['All', ...new Set(rows.map((r) => r.Primary_Device).filter(Boolean))]
+  const urbanRuralOptions = ['All', ...new Set(rows.map((r) => r.Urban_or_Rural).filter(Boolean))]
+
+  // ===== Aggregations on FILTERED data =====
+
   const byAgeMap = {}
-  const byAgeGenderMap = {} // age -> gender -> data
+  const byAgeGenderMap = {}
   const byGenderMap = {}
   const deviceCounts = {}
   const healthCounts = {}
   const exceededByAge = {}
   const exceededByGender = {}
-  const genderEduRecMap = {} // gender -> { eduSum, recSum, count }
+  const genderEduRecMap = {}
 
-  rows.forEach((r) => {
+  filteredRows.forEach((r) => {
     const age = Number(r.Age)
     const gender = r.Gender || 'Unknown'
     const avg = Number(r.Avg_Daily_Screen_Time_hr) || 0
@@ -127,7 +143,6 @@ export default function Dashboard() {
     genderEduRecMap[gender].count += 1
   })
 
-  // Format Age series
   const ages = Object.values(byAgeMap).sort((a, b) => a.age - b.age)
   const ageSeries = ages.map((a) => ({
     age: a.age,
@@ -136,18 +151,6 @@ export default function Dashboard() {
     recHours: +((a.sum / a.count) - (a.sumEdu / a.count)).toFixed(2),
   }))
 
-  // Age/Gender multi-line
-  const ageGenderSeries = ages.map((a) => {
-    const row = { age: a.age }
-    Object.entries(a).forEach(([gender, data]) => {
-      if (byAgeGenderMap[a.age] && byAgeGenderMap[a.age][gender]) {
-        row[`${gender}`] = +(byAgeGenderMap[a.age][gender].sum / byAgeGenderMap[a.age][gender].count).toFixed(2)
-      }
-    })
-    return row
-  })
-
-  // Re-compute with gender names
   const ageGenderSeriesFixed = ages.map((a) => {
     const row = { age: a.age }
     if (byAgeGenderMap[a.age]) {
@@ -158,35 +161,26 @@ export default function Dashboard() {
     return row
   })
 
-  // Device pie
   const deviceData = Object.keys(deviceCounts).map((k) => ({ name: k, value: deviceCounts[k] }))
-
-  // Health bar
   const healthData = Object.keys(healthCounts)
     .map((k) => ({ name: k, value: healthCounts[k] }))
     .sort((a, b) => b.value - a.value)
 
-  // Exceeded by age
   const exceededByAgeData = Object.values(exceededByAge).sort((a, b) => a.age - b.age)
-
-  // Exceeded by gender
   const exceededByGenderData = Object.values(exceededByGender)
 
-  // Gender Education/Recreational (donut)
   const genderEduRecData = Object.entries(genderEduRecMap).map(([gender, data]) => ({
     gender,
     Educational: +(data.eduSum / data.count).toFixed(2),
     Recreational: +(data.recSum / data.count).toFixed(2),
   }))
 
-  // Health by Gender (stacked bar)
   const healthByGenderData = Object.entries(byGenderMap).map(([gender, data]) => ({
     gender,
     ...data.healthImpacts,
   }))
 
-  // Scatter: Age vs Avg Daily Screen Time
-  const scatterData = rows.map((r, i) => ({
+  const scatterData = filteredRows.map((r, i) => ({
     x: Number(r.Age),
     y: Number(r.Avg_Daily_Screen_Time_hr),
     id: i,
@@ -197,20 +191,117 @@ export default function Dashboard() {
 
   if (loading) return <div className="panel">Loading dashboard…</div>
 
+  const statsTotal = filteredRows.length
+  const statsAvgScreenTime = statsTotal > 0 ? (filteredRows.reduce((sum, r) => sum + Number(r.Avg_Daily_Screen_Time_hr), 0) / statsTotal).toFixed(2) : 0
+  const statsExceeded = filteredRows.filter((r) => String(r.Exceeded_Recommended_Limit).toLowerCase() === 'true').length
+  const statsExceededPercent = statsTotal > 0 ? ((statsExceeded / statsTotal) * 100).toFixed(1) : 0
+
   return (
     <div className="dashboard-container" style={{ padding: '20px', backgroundColor: '#f8f9fa' }}>
-      <h2 style={{ marginBottom: '30px', fontSize: '28px', fontWeight: 'bold' }}>📊 Screen Time Analytics Dashboard</h2>
+      <h2 style={{ marginBottom: '20px', fontSize: '28px', fontWeight: 'bold' }}>📊 Screen Time Analytics Dashboard</h2>
 
-      {/* Row 1: Health Impacts by Gender + Avg Screen Time by Age/Gender */}
+      {/* Filter Controls */}
+      <div style={{
+        display: 'flex',
+        gap: '20px',
+        flexWrap: 'wrap',
+        marginBottom: '30px',
+        backgroundColor: 'white',
+        padding: '16px',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+      }}>
+        <div>
+          <label style={{ fontWeight: 'bold', marginRight: '8px' }}>Filter by Gender:</label>
+          <select
+            value={selectedGender}
+            onChange={(e) => setSelectedGender(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
+          >
+            {genders.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label style={{ fontWeight: 'bold', marginRight: '8px' }}>Filter by Device:</label>
+          <select
+            value={selectedDevice}
+            onChange={(e) => setSelectedDevice(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
+          >
+            {devices.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label style={{ fontWeight: 'bold', marginRight: '8px' }}>Filter by Area:</label>
+          <select
+            value={selectedUrbanRural}
+            onChange={(e) => setSelectedUrbanRural(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #ddd', cursor: 'pointer' }}
+          >
+            {urbanRuralOptions.map((ur) => (
+              <option key={ur} value={ur}>
+                {ur}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={() => {
+            setSelectedGender('All')
+            setSelectedDevice('All')
+            setSelectedUrbanRural('All')
+          }}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '4px',
+            border: 'none',
+            backgroundColor: '#f28e2b',
+            color: 'white',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
+        >
+          Reset Filters
+        </button>
+      </div>
+
+      {/* Summary Stats */}
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '30px' }}>
+        <div style={{ flex: 1, minWidth: '200px', backgroundColor: '#4e79a7', color: 'white', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{statsTotal}</div>
+          <div style={{ fontSize: '14px' }}>Total Records</div>
+        </div>
+        <div style={{ flex: 1, minWidth: '200px', backgroundColor: '#59a14f', color: 'white', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{statsAvgScreenTime}h</div>
+          <div style={{ fontSize: '14px' }}>Avg Daily Hours</div>
+        </div>
+        <div style={{ flex: 1, minWidth: '200px', backgroundColor: '#e15759', color: 'white', padding: '16px', borderRadius: '8px', textAlign: 'center' }}>
+          <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{statsExceeded}</div>
+          <div style={{ fontSize: '14px' }}>Exceeded Limit ({statsExceededPercent}%)</div>
+        </div>
+      </div>
+
+      {/* Row 1 */}
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '30px' }}>
         <div style={{ flex: '1', minWidth: '400px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Count of Health Impacts by Gender and Urban/Rural</h4>
+          <h4>Health Impacts by Gender</h4>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={healthByGenderData} margin={{ top: 16, right: 24, left: 8, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="gender" />
               <YAxis />
-              <Tooltip />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.1)' }} />
               <Legend />
               {['None', 'Poor Sleep', 'Eye Strain', 'Anxiety', 'Obesity Risk'].map((h, idx) => (
                 <Bar key={h} dataKey={h} stackId="a" fill={pieColors[idx % pieColors.length]} />
@@ -220,23 +311,23 @@ export default function Dashboard() {
         </div>
 
         <div style={{ flex: '1', minWidth: '400px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Average Daily Screen Time by Age, Gender & Age</h4>
+          <h4>Average Screen Time by Age & Gender</h4>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={ageGenderSeriesFixed} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="age" />
               <YAxis />
-              <Tooltip />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Legend />
               {Object.keys(byGenderMap).map((gender, idx) => (
-                <Line key={gender} type="monotone" dataKey={gender} stroke={lineColors[idx % lineColors.length]} />
+                <Line key={gender} type="monotone" dataKey={gender} stroke={lineColors[idx % lineColors.length]} strokeWidth={2} />
               ))}
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Row 2: Screen Time Trend + Primary Device */}
+      {/* Row 2 */}
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '30px' }}>
         <div style={{ flex: '1', minWidth: '400px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
           <h4>Average Daily Screen Time by Age</h4>
@@ -245,18 +336,26 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="age" />
               <YAxis />
-              <Tooltip />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Legend />
-              <Line type="monotone" dataKey="avgHours" stroke="#4e79a7" name="Avg Daily Hours" strokeWidth={2} />
+              <Line type="monotone" dataKey="avgHours" stroke="#4e79a7" name="Avg Daily Hours" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         <div style={{ flex: '0 0 360px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Count of Primary Device by Primary Device</h4>
+          <h4>Primary Device Distribution</h4>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
-              <Pie data={deviceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+              <Pie
+                data={deviceData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label={({ name, value }) => `${name}: ${value}`}
+              >
                 {deviceData.map((entry, idx) => (
                   <Cell key={`c-${idx}`} fill={pieColors[idx % pieColors.length]} />
                 ))}
@@ -268,106 +367,101 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Row 3: Exceeded Recommended Limit + Health Impacts */}
+      {/* Row 3 */}
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '30px' }}>
         <div style={{ flex: '1', minWidth: '400px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Count of Exceeded Recommended Limit by Age</h4>
+          <h4>Exceeded Recommended Limit by Age</h4>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={exceededByAgeData} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="age" />
               <YAxis />
-              <Tooltip />
-              <Bar dataKey="count" fill="#e15759" name="Exceeded" />
+              <Tooltip cursor={{ fill: 'rgba(225, 87, 89, 0.1)' }} />
+              <Bar dataKey="count" fill="#e15759" name="Count" onMouseEnter={(data) => setHoveredBar(data.age)} onMouseLeave={() => setHoveredBar(null)} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         <div style={{ flex: '1', minWidth: '400px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Count of Health Impacts by Health Impacts</h4>
+          <h4>Health Impacts Distribution</h4>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={healthData} layout="vertical" margin={{ top: 8, right: 30, left: 120, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis type="number" />
               <YAxis dataKey="name" type="category" width={100} />
-              <Tooltip />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.05)' }} />
               <Bar dataKey="value" fill="#4e79a7" />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Row 4: Education vs Recreational + Exceeded by Gender */}
+      {/* Row 4 */}
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '30px' }}>
         <div style={{ flex: '1', minWidth: '400px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Education/Recreational Screen Time by Age</h4>
+          <h4>Educational vs Recreational Time by Age</h4>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={ageSeries} margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="age" />
               <YAxis />
-              <Tooltip />
+              <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Legend />
-              <Line type="monotone" dataKey="eduHours" stroke="#59a14f" name="Educational" strokeWidth={2} />
-              <Line type="monotone" dataKey="recHours" stroke="#f28e2b" name="Recreational" strokeWidth={2} />
+              <Line type="monotone" dataKey="eduHours" stroke="#59a14f" name="Educational" strokeWidth={2} dot={{ r: 4 }} />
+              <Line type="monotone" dataKey="recHours" stroke="#f28e2b" name="Recreational" strokeWidth={2} dot={{ r: 4 }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         <div style={{ flex: '0 0 360px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Sum of Education and Recreational Screen Time by Gender</h4>
+          <h4>Education/Recreational by Gender</h4>
           <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie data={genderEduRecData} dataKey="Educational" nameKey="gender" cx="50%" cy="50%" outerRadius={60} innerRadius={35} label>
-                {genderEduRecData.map((entry, idx) => (
-                  <Cell key={`e-${idx}`} fill="#59a14f" />
-                ))}
-              </Pie>
-              <Pie data={genderEduRecData} dataKey="Recreational" nameKey="gender" cx="50%" cy="50%" outerRadius={80} innerRadius={65}>
-                {genderEduRecData.map((entry, idx) => (
-                  <Cell key={`r-${idx}`} fill="#f28e2b" />
-                ))}
-              </Pie>
+            <BarChart data={genderEduRecData} margin={{ top: 16, right: 24, left: 8, bottom: 40 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="gender" />
+              <YAxis />
               <Tooltip />
-            </PieChart>
+              <Legend />
+              <Bar dataKey="Educational" fill="#59a14f" />
+              <Bar dataKey="Recreational" fill="#f28e2b" />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Row 5: Scatter & Exceeded by Gender */}
+      {/* Row 5 */}
       <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '30px' }}>
         <div style={{ flex: '1', minWidth: '400px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Age vs Average Daily Screen Time (Scatter)</h4>
+          <h4>Age vs Screen Time (Scatter)</h4>
           <ResponsiveContainer width="100%" height={280}>
             <ScatterChart margin={{ top: 16, right: 24, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="x" name="Age" />
-              <YAxis dataKey="y" name="Avg Screen Time (hr)" />
+              <XAxis dataKey="x" name="Age" type="number" />
+              <YAxis dataKey="y" name="Screen Time (hr)" />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-              <Scatter data={scatterData} fill="#4e79a7" />
+              <Scatter data={scatterData} fill="#4e79a7" opacity={0.6} />
             </ScatterChart>
           </ResponsiveContainer>
         </div>
 
         <div style={{ flex: '1', minWidth: '400px', backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h4>Count of Exceeded Recommended Limit by Gender</h4>
+          <h4>Exceeded Limit by Gender</h4>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={exceededByGenderData} margin={{ top: 16, right: 24, left: 8, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="gender" />
               <YAxis />
-              <Tooltip />
+              <Tooltip cursor={{ fill: 'rgba(225, 87, 89, 0.1)' }} />
               <Bar dataKey="count" fill="#e15759" name="Exceeded" />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div style={{ backgroundColor: 'white', padding: '16px', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', marginBottom: '20px' }}>
-        <p style={{ fontSize: '12px', color: '#666' }}>
-          📌 Data source: backend `Data.csv` (via `/data` endpoint). All charts update in real-time based on backend data.
-        </p>
+      <div style={{ backgroundColor: 'white', padding: '16px', borderRadius: '8px', textAlign: 'center', marginTop: '20px' }}>
+        <p style={{ fontSize: '12px', color: '#666' }}>📌 Hover over charts to explore data. Use filters to drill down into specific demographics.</p>
       </div>
     </div>
   )
 }
+
