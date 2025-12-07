@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Time Advisor App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #0D9488;
+            --accent-color: #F97316;
+            --bg-color: #000000;
+            --card-color: #111827;
+            --text-color: #f1f5f9;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        html {
+            font-size: 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+        }
+        
+        /* App Layout - Mobile First */
+        #app-layout {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+        }
+        
+        @media (min-width: 768px) {
+            #app-layout {
+                flex-direction: row;
+            }
+        }
+        
+        /* Sidebar */
+        aside {
+            width: 100%;
+            height: auto;
+            background-color: #111827;
+            border-bottom: 1px solid #374151;
+            padding: 1rem;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 768px) {
+            aside {
+                width: 16rem;
+                height: 100vh;
+                border-right: 1px solid #374151;
+                border-bottom: none;
+                padding: 1.5rem 1rem;
+                overflow-y: auto;
+            }
+        }
+        
+        aside h1 {
+            font-size: 1.25rem;
+            margin: 0 0 1rem 0;
+            font-weight: 700;
+        }
+        
+        @media (min-width: 768px) {
+            aside h1 {
+                font-size: 1.5rem;
+                margin-bottom: 2rem;
+            }
+        }
+        
+        /* Navigation */
+        nav ul {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            flex: 1;
+            width: 100%;
+        }
+        
+        nav li {
+            flex: 1;
+            min-width: auto;
+        }
+        
+        nav a {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0.75rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: 0.5rem;
+            color: #9ca3af;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-height: 44px;
+            width: 100%;
+            gap: 0.75rem;
+        }
+        
+        nav a i {
+            flex-shrink: 0;
+            width: 1.25rem;
+            height: 1.25rem;
+        }
+        
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        @media (min-width: 768px) {
+            main {
+                padding: 2rem;
+            }
+        }
+        
+        .max-w-4xl {
+            width: 100%;
+            margin: 0 auto;
+            padding: 0;
+        }
+        
+        /* Typography */
+        h1 { font-size: 1.75rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.25rem; }
+        h4 { font-size: 1.125rem; }
+        
+        @media (max-width: 768px) {
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+            h3 { font-size: 1.125rem; }
+            h4 { font-size: 1rem; }
+        }
+        
+        @media (max-width: 480px) {
+            h1 { font-size: 1.25rem; }
+            h2 { font-size: 1.125rem; }
+            h3 { font-size: 1rem; }
+            h4 { font-size: 0.95rem; }
+        }
+        
+        /* Forms & Inputs */
+        button, input, select, textarea {
+            font-size: 16px !important;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        button, input, select, textarea {
+            min-height: 44px;
+            padding: 0.75rem;
+        }
+        
+        @media (min-width: 768px) {
+            button {
+                min-height: 40px;
+            }
+            input, select, textarea {
+                min-height: 40px;
+            }
+        }
+        
+        /* Grid System */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .grid.lg\:grid-cols-2 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .grid {
+                gap: 1.5rem;
+            }
+        }
+        
+        /* Padding & Spacing */
+        .p-8 { padding: 1rem; }
+        .p-6 { padding: 1rem; }
+        .p-4 { padding: 0.75rem; }
+        
+        @media (min-width: 768px) {
+            .p-8 { padding: 2rem; }
+            .p-6 { padding: 1.5rem; }
+            .p-4 { padding: 1rem; }
+        }
+        
+        /* Cards */
+        .rounded-xl {
+            border-radius: 0.75rem;
+        }
+        
+        .border-gray-800 {
+            border-color: #1f2937;
+        }
+        
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            margin-top: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .chart-container {
+                height: 200px;
+            }
+        }
+        
+        /* Score Circle */
+        #dashboard-score-circle {
+            width: 5rem;
+            height: 5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 900;
+            border-radius: 50%;
+            border: 4px solid #0D9488;
+            flex-shrink: 0;
+            margin-bottom: 1rem;
+            background-color: rgba(13, 148, 136, 0.1);
+        }
+        
+        @media (min-width: 768px) {
+            #dashboard-score-circle {
+                width: 7rem;
+                height: 7rem;
+                font-size: 2.5rem;
+                margin-bottom: 0;
+                margin-right: 1.5rem;
+            }
+        }
+        
+        #dashboard-score-summary {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 768px) {
+            #dashboard-score-summary {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+        
+        /* Tableau */
+        .tableau-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 75%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            border: 1px solid #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        @media (min-width: 640px) {
+            .tableau-container {
+                padding-bottom: 65%;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .tableau-container {
+                padding-bottom: 56.25%;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .tableau-container {
+                padding-bottom: 50%;
+            }
+        }
+        
+        .tableau-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        
+        /* Chart Container Responsive */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 250px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .chart-container {
+                height: 200px !important;
+            }
+        }
+
+        .rating-stars {
+            font-size: 2.5rem; 
+            color: #4b5563; 
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .star {
+            transition: color 0.1s;
+        }
+
+        .rating-stars .star.selected {
+            color: var(--accent-color); 
+        }
+
+        .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-left: 4px solid var(--accent-color);
+            font-weight: 600;
+        }
+        
+        .nav-link:hover {
+            background-color: #1f2937;
+        }
+        
+        .view {
+            display: none;
+        }
+        
+        .view.active {
+            display: block;
+        }
+        
+        .text-accent {
+            color: var(--accent-color);
+        }
+        
+        #login-view {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #app-layout {
+            display: none;
+            width: 100%;
+        }
+
+        .break-list {
+            counter-reset: step-counter;
+        }
+        
+        .break-list p {
+            padding-left: 1.5rem;
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+        
+        .break-list p::before {
+            counter-increment: step-counter;
+            content: counter(step-counter) ".";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        /* Space & Margin Responsive */
+        .space-y-6 > * + * {
+            margin-top: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .space-y-6 > * + * {
+                margin-top: 1.5rem;
+            }
+        }
+        
+        /* Text Sizing */
+        .text-4xl { font-size: 1.75rem; }
+        .text-3xl { font-size: 1.5rem; }
+        .text-2xl { font-size: 1.25rem; }
+        .text-xl { font-size: 1.125rem; }
+        .text-lg { font-size: 1rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        
+        @media (min-width: 768px) {
+            .text-4xl { font-size: 2rem; }
+            .text-3xl { font-size: 1.75rem; }
+            .text-2xl { font-size: 1.5rem; }
+        }
+        
+        /* Form Improvements */
+        input[type="text"],
+        input[type="number"],
+        input[type="email"],
+        input[type="password"],
+        select,
+        textarea {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        
+        /* Flex utilities */
+        .flex {
+            display: flex;
+        }
+        
+        .flex-col {
+            flex-direction: column;
+        }
+        
+        @media (min-width: 768px) {
+            .md\:flex-row {
+                flex-direction: row;
+            }
+        }
+        
+        .items-center {
+            align-items: center;
+        }
+        
+        .justify-between {
+            justify-content: space-between;
+        }
+        
+        .gap-6 {
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 768px) {
+            .gap-6 {
+                gap: 1rem;
+            }
+        }
+        
+        /* Width utilities */
+        .w-full {
+            width: 100%;
+        }
+        
+        .w-16 {
+            width: 4rem;
+        }
+        
+        .h-16 {
+            height: 4rem;
+        }
+        
+        /* Responsive text alignment */
+        .text-center {
+            text-align: center;
+        }
+        
+        /* Overflow handling */
+        .overflow-hidden {
+            overflow: hidden;
+        }
+        
+        .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Login form mobile fix */
+        #login-view {
+            padding: 1rem;
+        }
+        
+        #login-view > div {
+            max-width: 100%;
+        }
+        
+        @media (min-width: 480px) {
+            #login-view > div {
+                max-width: 28rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- LOGIN VIEW -->
+    <section id="login-view">
+        <div class="bg-gray-900 p-6 rounded-2xl shadow-2xl border border-gray-800 w-full mx-4">
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 bg-teal-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-teal-500">
+                    <i class="fas fa-user-astronaut text-2xl text-teal-400"></i>
+                </div>
+                <h1 class="text-xl font-bold text-white mb-2">Digital time analyser</h1>
+                <p class="text-gray-400 text-xs">Enter your name to start your personalized analysis.</p>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-xs font-medium text-gray-400 mb-2">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="Type your name here..."
+                        class="w-full p-3 border border-gray-700 rounded-lg bg-black text-gray-100 placeholder-gray-600 focus:ring-teal-500 focus:border-teal-500 transition-colors text-sm">
+                </div>
+                <button type="submit" 
+                        class="w-full py-3 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white font-bold rounded-lg shadow-lg transform transition hover:scale-[1.02] focus:ring-4 focus:ring-teal-500/50 text-sm">
+                    start
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- APP LAYOUT -->
+    <div id="app-layout" class="flex flex-col md:flex-row">
+        <aside class="w-full md:w-64 bg-gray-900 text-gray-200 p-3 md:p-4 shadow-xl border-b md:border-b-0 md:border-r border-gray-800 flex flex-col flex-shrink-0">
+            <h1 class="text-lg md:text-2xl font-bold mb-4 md:mb-8 text-white flex items-center">
+                <i class="fas fa-tablet-alt mr-2 text-accent"></i><span class="hidden sm:inline">Digital Analyser</span><span class="sm:hidden">DA</span>
+            </h1>
+            
+            <div class="mb-4 md:mb-8 p-2 md:p-3 bg-black rounded-lg border border-gray-800 flex items-center">
+                <div class="w-8 h-8 rounded-full bg-teal-900 flex items-center justify-center text-teal-400 font-bold mr-2 text-xs flex-shrink-0" id="nav-avatar">U</div>
+                <div class="overflow-hidden min-w-0">
+                    <p class="text-xs md:text-sm font-bold text-white truncate" id="nav-username">User</p>
+                    <p class="text-xs text-gray-500 truncate" id="user-id-display">Guest User</p>
+                </div>
+            </div>
+
+            <nav class="flex-1">
+                <ul>
+                    <li class="mb-1 md:mb-2">
+                        <a href="#advisor" class="nav-link flex items-center p-2 md:p-3 rounded-lg active text-xs md:text-sm" data-view="advisor">
+                            <i class="fas fa-desktop w-4 h-4 md:w-5 md:h-5 flex-shrink-0"></i><span>Screen Time Advisor</span>
+                        </a>
+                    </li>
+                    <li class="mb-1 md:mb-2">
+                        <a href="#dashboard" class="nav-link flex items-center p-2 md:p-3 rounded-lg text-xs md:text-sm" data-view="dashboard">
+                            <i class="fas fa-chart-line w-4 h-4 md:w-5 md:h-5 flex-shrink-0"></i><span>Dashboard & Report</span>
+                        </a>
+                    </li>
+                    <li class="mb-1 md:mb-2">
+                        <a href="#feedback" class="nav-link flex items-center p-2 md:p-3 rounded-lg text-xs md:text-sm" data-view="feedback">
+                            <i class="fas fa-comment-dots w-4 h-4 md:w-5 md:h-5 flex-shrink-0"></i><span>Feedback</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <button id="logout-btn" class="mt-auto p-2 md:p-3 flex items-center justify-center md:justify-start text-gray-400 hover:text-white hover:bg-red-900/20 rounded-lg transition-colors text-xs md:text-sm w-full">
+                <i class="fas fa-sign-out-alt flex-shrink-0"></i><span class="ml-2 md:ml-3">Exit</span>
+            </button>
+        </aside>
+
+        <main class="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+            <div class="w-full mx-auto">
+                
+                <!-- ADVISOR VIEW -->
+                <div id="advisor-view" class="view active">
+                    <div class="bg-gray-900 p-4 md:p-6 lg:p-8 rounded-xl shadow-2xl border border-gray-800">
+                        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-2">
+                            <h2 class="text-2xl md:text-3xl lg:text-4xl font-extrabold text-white text-accent">
+                                Personalized Plan
+                            </h2>
+                            <span class="text-gray-500 text-xs md:text-sm bg-black px-2 md:px-3 py-1 rounded-full border border-gray-800 w-fit" id="header-username">
+                                Guest
+                            </span>
+                        </div>
+                        
+                        <form id="advisor-form" class="space-y-4 md:space-y-6 mb-8 md:mb-10 border-b border-gray-800 pb-6 md:pb-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                <div>
+                                    <label for="age" class="block text-xs md:text-sm font-medium text-gray-400 mb-2">Your Age (Years)</label>
+                                    <input type="number" id="age" name="age" required min="1" max="120"
+                                        class="w-full p-2 md:p-3 border border-gray-700 rounded-lg bg-black text-gray-100 placeholder-gray-600 focus:ring-teal-500 focus:border-teal-500 transition-colors text-sm">
+                                </div>
+                                <div>
+                                    <label for="gender" class="block text-xs md:text-sm font-medium text-gray-400 mb-2">Your Gender</label>
+                                    <select id="gender" name="gender" required
+                                        class="w-full p-2 md:p-3 border border-gray-700 rounded-lg bg-black text-gray-100 focus:ring-teal-500 focus:border-teal-500 transition-colors text-sm">
+                                        <option value="" disabled selected>Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Non-binary">Non-binary</option>
+                                        <option value="Prefer not to say">Prefer not to say</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                                <div>
+                                    <label for="screen-time" class="block text-xs md:text-sm font-medium text-gray-400 mb-2">Daily Screen Time (Hours)</label>
+                                    <input type="number" id="screen-time" name="screen-time" required min="0" max="24" step="0.5"
+                                        class="w-full p-2 md:p-3 border border-gray-700 rounded-lg bg-black text-gray-100 placeholder-gray-600 focus:ring-teal-500 focus:border-teal-500 transition-colors text-sm">
+                                </div>
+                                <div>
+                                    <label for="device" class="block text-xs md:text-sm font-medium text-gray-400 mb-2">Primary Device Used</label>
+                                    <select id="device" name="device" required
+                                        class="w-full p-2 md:p-3 border border-gray-700 rounded-lg bg-black text-gray-100 focus:ring-teal-500 focus:border-teal-500 transition-colors text-sm">
+                                        <option value="" disabled selected>Select Device</option>
+                                        <option value="Smartphone">Smartphone</option>
+                                        <option value="Laptop/Desktop">Laptop/Desktop</option>
+                                        <option value="Tablet">Tablet</option>
+                                        <option value="Gaming Console">Gaming </option>
+                                        <option value="Smart TV">Smart TV</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" id="recommendation-button"
+                                    class="w-full px-4 md:px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-xl shadow-lg transition duration-300 transform hover:scale-[1.01] text-sm md:text-base">
+                                <i class="fas fa-sparkles mr-2"></i> Generate My Personal Plan
+                            </button>
+                        </form>
+
+                        <div id="score-display-container" class="mt-6 md:mt-8 pt-4 md:pt-6 border-t border-gray-800 hidden">
+                            <h3 class="text-xl md:text-3xl font-bold text-white mb-3 md:mb-4">Your Digital Health Score</h3>
+                            <div class="flex flex-col sm:flex-row items-center gap-4 bg-black p-4 md:p-6 rounded-xl shadow-inner border border-teal-900">
+                                <div id="usage-score-circle" class="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center font-extrabold text-3xl md:text-4xl text-orange-500 border-4 border-orange-500 rounded-full flex-shrink-0">
+                                    <span id="score-value">--</span>
+                                </div>
+                                <div class="text-center sm:text-left">
+                                    <p class="text-sm md:text-lg font-semibold text-teal-400">Your score is calculated against current health guidelines based on your age and screen time.</p>
+                                    <p id="score-message" class="text-xs md:text-sm text-gray-400 mt-1">Submit your details to see your score.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="immediate-insight-container" class="mt-4 pt-4 border-t border-gray-800 hidden">
+                            <h3 class="text-lg md:text-2xl font-bold text-teal-400 mb-2 flex items-center">
+                                <i class="fas fa-lightbulb mr-2"></i> Immediate Insight
+                            </h3>
+                            <div id="immediate-insight-content" class="p-3 md:p-4 bg-black rounded-lg border border-gray-700 text-gray-300 italic text-xs md:text-sm">
+                            </div>
+                        </div>
+
+                        <div id="recommendation-output" class="hidden mt-6 md:mt-8">
+                            <h3 class="text-xl md:text-2xl lg:text-3xl font-bold text-white mb-3 md:mb-4 border-b border-gray-800 pb-2">
+                                <i class="fas fa-scroll mr-2 text-accent"></i> Key Highlights for <span id="output-username" class="text-teal-400">You</span>
+                            </h3>
+                            <div id="tts-controls" class="mb-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                                <button id="break-plan-button" disabled
+                                    class="w-full sm:w-auto px-4 md:px-6 py-2 md:py-3 bg-teal-600 hover:bg-teal-700 text-white font-medium text-sm md:text-base rounded-lg transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed">
+                                    ✨ Generate Quick Break Plan
+                                </button>
+                            </div>
+                            <div id="recommendation-content" class="p-3 md:p-6 bg-black rounded-lg shadow-inner border border-gray-800 space-y-3 md:space-y-4 text-gray-200 whitespace-pre-wrap text-xs md:text-sm">
+                            </div>
+                            <div id="citation-sources" class="mt-4 text-xs text-gray-500">
+                            </div>
+
+                            <div id="break-plan-output" class="mt-6 md:mt-8 hidden">
+                                <h4 class="text-lg md:text-2xl font-bold text-teal-400 mb-2 md:mb-3 border-b border-gray-800 pb-1">
+                                    🎯 Your 2-Minute Digital Break Routine
+                                </h4>
+                                <p class="text-xs md:text-sm text-gray-400 mb-3 italic">Step away from screens and refresh your mind with this quick routine:</p>
+                                <div id="break-plan-content" class="break-list p-3 md:p-4 bg-black rounded-lg border border-teal-900 space-y-1 md:space-y-2 text-gray-300 text-xs md:text-sm">
+                                </div>
+                                <p class="text-xs text-gray-500 mt-3 mb-4">💡 Click the button again to generate a different routine!</p>
+                                
+                                <div class="mt-6 pt-4 border-t border-gray-800">
+                                    <h5 class="text-sm md:text-lg font-bold text-orange-400 mb-2">📋 Why Take Breaks?</h5>
+                                    <ul class="text-xs md:text-sm text-gray-400 space-y-1">
+                                        <li>✓ Reduces eye strain and fatigue</li>
+                                        <li>✓ Improves focus and productivity</li>
+                                        <li>✓ Promotes better posture and movement</li>
+                                        <li>✓ Enhances mental clarity and creativity</li>
+                                    </ul>
+                                </div>
+
+                                <div class="mt-6 pt-4 border-t border-gray-800">
+                                    <h5 class="text-sm md:text-lg font-bold text-teal-400 mb-3">⏰ Recommended Break Schedule</h5>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs md:text-sm">
+                                        <div class="bg-gray-900 p-2 md:p-3 rounded border border-gray-700">
+                                            <p class="font-semibold text-orange-400">Every 20 mins</p>
+                                            <p class="text-gray-400">Quick eye rest (20-20-20 rule)</p>
+                                        </div>
+                                        <div class="bg-gray-900 p-2 md:p-3 rounded border border-gray-700">
+                                            <p class="font-semibold text-orange-400">Every 1 hour</p>
+                                            <p class="text-gray-400">2-3 min physical movement</p>
+                                        </div>
+                                        <div class="bg-gray-900 p-2 md:p-3 rounded border border-gray-700">
+                                            <p class="font-semibold text-orange-400">Every 2 hours</p>
+                                            <p class="text-gray-400">5-10 min outdoor time</p>
+                                        </div>
+                                        <div class="bg-gray-900 p-2 md:p-3 rounded border border-gray-700">
+                                            <p class="font-semibold text-orange-400">Daily</p>
+                                            <p class="text-gray-400">Screen-free before bedtime</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 pt-4 border-t border-gray-800">
+                                    <h5 class="text-sm md:text-lg font-bold text-teal-400 mb-3">🎯 Quick Action Tips</h5>
+                                    <ul class="text-xs md:text-sm text-gray-400 space-y-2">
+                                        <li class="flex items-start gap-2">
+                                            <span class="text-orange-400 flex-shrink-0 mt-0.5">→</span>
+                                            <span><strong>Set Reminders:</strong> Use phone alarms or app notifications to prompt breaks</span>
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <span class="text-orange-400 flex-shrink-0 mt-0.5">→</span>
+                                            <span><strong>Involve Others:</strong> Make it fun with family or friends during breaks</span>
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <span class="text-orange-400 flex-shrink-0 mt-0.5">→</span>
+                                            <span><strong>Track Progress:</strong> Monitor your improvements in focus and energy</span>
+                                        </li>
+                                        <li class="flex items-start gap-2">
+                                            <span class="text-orange-400 flex-shrink-0 mt-0.5">→</span>
+                                            <span><strong>Device-Free Zones:</strong> Keep screens out of bedrooms and dining areas</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                        </div>
+                        <div id="advisor-status" class="mt-4 text-center text-sm md:text-lg"></div>
+                    </div>
+                </div>
+
+                <!-- DASHBOARD VIEW -->
+                <div id="dashboard-view" class="view">
+                    <div class="bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-800">
+                        <h2 class="text-4xl font-extrabold text-white mb-6 text-accent">
+                            Digital Well-being Dashboard
+                        </h2>
+                        
+                        <div class="mb-10">
+                            <h3 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2 flex items-center">
+                                <i class="fas fa-chart-pie mr-3 text-teal-400"></i> Live Visual Analytics (Tableau)
+                            </h3>
+                            <div class="tableau-container bg-black rounded-xl border border-gray-800">
+                                <iframe 
+                                    src="https://prod-in-a.online.tableau.com/t/donasojan2-02c0b5b7f2/views/SCREENSPACE/Dashboard1?:embed=yes&:showVizHome=no&:tabs=no&:toolbar=no" 
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 text-center">*This is your live Tableau report dashboard.*</p>
+                        </div>
+                        
+                        <div class="mb-8">
+                            <h3 class="text-xl font-bold text-white mb-4 border-b border-gray-700 pb-2 flex items-center">
+                                <i class="fas fa-chart-bar mr-3 text-accent"></i> Data Analysis Charts
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div class="bg-black p-4 rounded-xl border border-gray-800">
+                                    <h4 class="text-sm font-bold text-gray-300 mb-4 text-center">Avg Screen Time by Age (Urban vs Rural)</h4>
+                                    <div class="chart-container">
+                                        <canvas id="screenTimeAgeChart"></canvas>
+                                    </div>
+                                </div>
+                                
+                                <div class="bg-black p-4 rounded-xl border border-gray-800">
+                                    <h4 class="text-sm font-bold text-gray-300 mb-4 text-center">Health Impacts Distribution by Gender</h4>
+                                    <div class="chart-container">
+                                        <canvas id="healthImpactsChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="dashboard-score-summary" class="bg-black p-6 rounded-xl shadow-inner border border-accent mb-8 hidden">
+                            <h3 class="text-2xl font-bold text-white mb-3 flex items-center">
+                                <i class="fas fa-bullseye text-teal-400 mr-2"></i> Digital Health Score Summary
+                            </h3>
+                            <div class="flex items-center space-x-6">
+                                <div id="dashboard-score-circle" class="relative w-28 h-28 flex items-center justify-center font-extrabold text-5xl rounded-full border-4 flex-shrink-0">
+                                    <span id="dashboard-score-value">--</span>
+                                </div>
+                                <div>
+                                    <p id="dashboard-score-message" class="text-lg font-semibold text-gray-200">
+                                        Run the Screen Time Advisor to calculate your score.
+                                    </p>
+                                    <p id="dashboard-score-details" class="text-sm text-gray-400 mt-1">
+                                        Your score reflects your usage relative to health guidelines.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="dashboard-improvement-focus" class="bg-black p-6 rounded-xl shadow-inner border border-teal-900 mb-8 hidden">
+                            <h3 class="text-2xl font-bold text-white mb-3 flex items-center">
+                                <i class="fas fa-chart-line text-accent mr-2"></i> Further Improvements
+                            </h3>
+                            <p class="text-sm text-gray-400 mb-3">Key actions to improve your Digital Health Score:</p>
+                            <div id="improvement-steps-content" class="text-gray-200 space-y-3 whitespace-pre-wrap font-medium">
+                            </div>
+                        </div>
+
+                        <div id="powerbi-embed-container" class="w-full min-h-[100px] bg-black rounded-xl p-6 text-gray-500 border border-teal-900 border-dashed">
+                            <div class="text-center">
+                                <p class="text-sm">Personalized analysis will appear here after running the advisor.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FEEDBACK VIEW -->
+                <div id="feedback-view" class="view">
+                    <div class="bg-gray-900 p-8 rounded-xl shadow-2xl border border-gray-800">
+                        <h2 class="text-4xl font-extrabold text-white mb-2 text-accent">
+                            How Was Your Experience?
+                        </h2>
+                        <p class="text-gray-400 mb-6 italic border-b border-gray-800 pb-4">
+                            Your feedback helps us improve the Screen Time Advisor tool.
+                        </p>
+
+                        <form id="feedback-form" class="space-y-6">
+                            <div>
+                                <label class="block text-xl font-medium mb-3 text-white">
+                                    * How Would You Rate This Tool?
+                                </label>
+                                <div class="rating-stars flex space-x-2">
+                                    <span class="star" data-value="1">&#9733;</span>
+                                    <span class="star" data-value="2">&#9733;</span>
+                                    <span class="star" data-value="3">&#9733;</span>
+                                    <span class="star" data-value="4">&#9733;</span>
+                                    <span class="star" data-value="5">&#9733;</span>
+                                </div>
+                                <input type="hidden" id="feedback-rating-value" name="rating" value="0" required>
+                            </div>
+
+                            <div>
+                                <label for="suggestion" class="block text-xl font-medium mb-3 text-white">
+                                    * Anything you'd like to share or suggest?
+                                </label>
+                                <textarea id="suggestion" name="suggestion" rows="6" required
+                                          class="w-full p-4 border border-gray-700 rounded-lg bg-black text-gray-100 placeholder-gray-600 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition duration-150"
+                                          placeholder="Type your detailed suggestions here..."></textarea>
+                            </div>
+
+                            <div id="categorization-output" class="p-4 bg-black rounded-lg border border-gray-700 hidden">
+                                <p class="font-bold text-gray-300 mb-2">✨ AI Feedback Analysis:</p>
+                                <p class="text-sm">Sentiment: <span id="sentiment-display" class="font-semibold text-orange-400">...</span></p>
+                                <p class="text-sm">Category: <span id="category-display" class="font-semibold text-orange-400">...</span></p>
+                            </div>
+
+                            <div>
+                                <button type="submit"
+                                        class="w-full md:w-auto px-8 py-3 bg-accent hover:bg-orange-700 text-white font-semibold rounded-xl shadow-lg transition duration-300 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-orange-500/50">
+                                    Submit My Feedback
+                                </button>
+                                <div id="feedback-status-message" class="mt-4 text-center text-lg hidden"></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let currentUsername = 'Guest';
+        let userData = {};
+        let comparisonData = [];
+        const GEMINI_API_KEY = "AIzaSyAQ89jrJYaN_o5c_TLEQA6lJD1S6rXH6G8";
+        const GEMINI_MODEL = 'gemini-2.0-flash-exp';
+        const BASE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+        // Login handler
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            if(username) {
+                currentUsername = username;
+                document.getElementById('login-view').style.display = 'none';
+                document.getElementById('app-layout').style.display = 'flex';
+                document.getElementById('nav-username').textContent = username;
+                document.getElementById('nav-avatar').textContent = username.charAt(0).toUpperCase();
+                document.getElementById('header-username').textContent = username;
+                document.getElementById('output-username').textContent = username;
+                document.getElementById('user-id-display').textContent = `ID: ${Math.random().toString(36).substr(2, 9)}`;
+            }
+        });
+
+        // Logout handler
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            if(confirm("Are you sure you want to log out?")) {
+                location.reload();
+            }
+        });
+
+        // Navigation
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetView = this.getAttribute('data-view');
+                switchView(targetView);
+            });
+        });
+
+        function switchView(targetView) {
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            document.getElementById(`${targetView}-view`).classList.add('active');
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-view') === targetView) {
+                    link.classList.add('active');
+                }
+            });
+            
+            if (targetView === 'dashboard') {
+                initLocalCharts();
+            }
+        }
+
+        // Age group helper
+        function getAgeGroup(age) {
+            const a = parseInt(age);
+            if (isNaN(a)) return 'Unknown';
+            if (a <= 12) return 'Children (0-12)';
+            if (a <= 17) return 'Adolescents (13-17)';
+            if (a <= 25) return 'Young Adults (18-25)';
+            if (a <= 50) return 'Adults (26-50)';
+            return 'Older Adults (51+)';
+        }
+
+        // Score calculation
+        function calculateUsageScore(age, screenTime) {
+            const time = parseFloat(screenTime);
+            const a = parseInt(age);
+            if (isNaN(time) || isNaN(a)) return 0;
+            let recommendedMax = (a <= 12) ? 1.5 : (a <= 17 ? 3.0 : 5.0);
+            if (time <= recommendedMax) return 100;
+            const maxBadTime = 12.0;
+            if (time < maxBadTime) {
+                const score = 100 - (100 * (time - recommendedMax) / (maxBadTime - recommendedMax));
+                return Math.max(0, Math.round(score));
+            }
+            return 0; 
+        }
+
+        function displayUsageScore(score, age, screenTime) {
+            document.getElementById('score-display-container').classList.remove('hidden');
+            document.getElementById('score-value').textContent = score;
+            document.getElementById('dashboard-score-value').textContent = score;
+            document.getElementById('dashboard-score-summary').classList.remove('hidden');
+
+            let message, colorClass;
+            if (score >= 80) {
+                message = `Excellent, ${currentUsername}!`;
+                colorClass = 'border-green-400 text-green-400';
+            } else if (score >= 50) {
+                message = `Good job, ${currentUsername}.`;
+                colorClass = 'border-yellow-400 text-yellow-400';
+            } else {
+                message = `Attention needed, ${currentUsername}.`;
+                colorClass = 'border-orange-500 text-orange-500';
+            }
+
+            document.getElementById('usage-score-circle').className = `relative w-24 h-24 flex items-center justify-center font-extrabold text-4xl rounded-full border-4 flex-shrink-0 ${colorClass}`;
+            document.getElementById('dashboard-score-circle').className = `relative w-28 h-28 flex items-center justify-center font-extrabold text-5xl rounded-full border-4 flex-shrink-0 ${colorClass}`;
+            document.getElementById('score-message').textContent = message;
+            document.getElementById('dashboard-score-message').textContent = message;
+            document.getElementById('dashboard-score-details').textContent = `Current Usage: ${screenTime} Hours/Day.`;
+        }
+
+        // Advisor form submission
+        document.getElementById('advisor-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const age = document.getElementById('age').value;
+            const gender = document.getElementById('gender').value;
+            const screenTime = document.getElementById('screen-time').value;
+            const device = document.getElementById('device').value;
+
+            userData = { age, gender, screenTime, device };
+
+            const score = calculateUsageScore(parseInt(age), parseFloat(screenTime));
+            displayUsageScore(score, age, screenTime);
+
+            await fetchGeminiRecommendations(age, gender, screenTime, device, score);
+        });
+
+        async function fetchGeminiRecommendations(age, gender, screenTime, device, score) {
+            const statusElement = document.getElementById('advisor-status');
+            const outputElement = document.getElementById('recommendation-content');
+            
+            outputElement.textContent = 'Generating...';
+            document.getElementById('recommendation-output').classList.remove('hidden');
+            document.getElementById('break-plan-button').disabled = false;
+            statusElement.textContent = `✨ Generating personalized plan for ${currentUsername}...`;
+            statusElement.className = 'mt-4 text-center text-lg text-yellow-400';
+
+            const prompt = `Analyze screen time for ${currentUsername}, ${age}-year-old ${gender}, ${screenTime} hours/day on ${device}. Score: ${score}/100.
+
+Provide exactly this structure:
+1. **Health Impact:** One sentence summary.
+2. **Merits:** 2 short bullet points.
+3. **Demerits:** 2 short bullet points.
+4. **Further Improvements:** 3 specific actionable steps.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+
+            try {
+                // Use backend proxy instead of direct API call
+                const response = await fetch('http://127.0.0.1:3000/api/recommend-gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    outputElement.textContent = text;
+                    
+                    const summaryMatch = text.match(/\*\*Health Impact:\*\*\s*(.*?)(?:\n|$)/i);
+                    if (summaryMatch) {
+                        const summary = summaryMatch[1].trim();
+                        const ruralAvg = 3.8;
+                        const diff = ((parseFloat(screenTime) - ruralAvg) / ruralAvg * 100).toFixed(0);
+                        let contextMsg = "";
+                        if(parseFloat(screenTime) > 0 && parseInt(age) > 0) {
+                            if(diff > 0) {
+                                contextMsg = ` (Note: Your usage is approx. ${diff}% higher than the rural average for your age group.)`;
+                            } else {
+                                contextMsg = ` (Great job! Your usage is below the rural average for your age group.)`;
+                            }
+                        }
+                        document.getElementById('immediate-insight-content').textContent = summary + contextMsg;
+                        document.getElementById('immediate-insight-container').classList.remove('hidden');
+                    }
+
+                    // Extract improvements for dashboard
+                    const improvementsMatch = text.match(/\*\*Further Improvements\*\*[\s\S]*/i);
+                    if (improvementsMatch) {
+                        const improvements = improvementsMatch[0].replace(/\*\*Further Improvements\*\*/, '').trim();
+                        document.getElementById('improvement-steps-content').innerHTML = improvements.replace(/\n/g, '<br>');
+                        document.getElementById('dashboard-improvement-focus').classList.remove('hidden');
+                    }
+                    
+                    statusElement.textContent = '✅ Personalized plan generated successfully.';
+                    statusElement.className = 'mt-4 text-center text-lg text-green-400';
+
+                    // Generate comparison report
+                    await generateComparisonReport(age, screenTime, device);
+                } else {
+                    throw new Error('No content in response');
+                }
+
+            } catch (error) {
+                console.error('Gemini API Error:', error);
+                outputElement.textContent = 'Failed to generate recommendations. Please try again.';
+                statusElement.textContent = `❌ API Error: ${error.message}`;
+                statusElement.className = 'mt-4 text-center text-lg text-red-400';
+            }
+        }
+
+        // Break plan generator
+        document.getElementById('break-plan-button').addEventListener('click', async function() {
+            const device = document.getElementById('device').value;
+            const breakButton = this;
+            const breakContent = document.getElementById('break-plan-content');
+            const statusElement = document.getElementById('advisor-status');
+
+            breakContent.innerHTML = 'Generating your personalized 2-minute routine...';
+            breakButton.disabled = true;
+            document.getElementById('break-plan-output').classList.remove('hidden');
+            statusElement.textContent = `✨ Generating break plan for ${currentUsername}...`;
+            statusElement.className = 'mt-4 text-center text-lg text-yellow-400';
+
+            // Rotate through 10 different routine types
+            const routineTypes = [
+                `Create a 2-minute PHYSICAL break routine for ${currentUsername} using a ${device}. Include: stretching, movement, and eye exercises. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute MINDFULNESS break routine for ${currentUsername}. Include: breathing exercises and relaxation techniques. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute OUTDOOR ACTIVITY break routine for ${currentUsername} to do away from screens. Include: garden, park, or neighborhood activities. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute SOCIAL INTERACTION break routine for ${currentUsername}. Include: conversation games and family activities. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute CREATIVE ACTIVITY break routine for ${currentUsername}. Include: drawing, music, poetry, or crafts. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute HYDRATION & NUTRITION break routine for ${currentUsername}. Include: drinking water, eating healthy snacks, and meal prep activities. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute DANCE & MUSIC break routine for ${currentUsername}. Include: dancing, singing, musical instruments, and rhythm games. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute BRAIN GAME break routine for ${currentUsername}. Include: puzzles, memory games, riddles, and logic challenges. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute GRATITUDE & JOURNALING break routine for ${currentUsername}. Include: writing positive thoughts, sketching, and reflection exercises. Output ONLY a numbered list of 5 short steps.`,
+                `Create a 2-minute PET CARE & ANIMAL INTERACTION break routine for ${currentUsername}. Include: playing with pets, watching animals, and nature observation. Output ONLY a numbered list of 5 short steps.`
+            ];
+            
+            const randomRoutine = routineTypes[Math.floor(Math.random() * routineTypes.length)];
+            const prompt = randomRoutine;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/recommend-gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    const formattedHtml = text.split('\n')
+                        .filter(line => line.match(/^\s*\d+\.\s*/))
+                        .map(line => `<p>${line.replace(/^\s*\d+\.\s*/, '')}</p>`)
+                        .join('');
+
+                    breakContent.innerHTML = formattedHtml || text;
+                    statusElement.textContent = '✅ Break Plan generated. (Click button again for a different routine)';
+                    statusElement.className = 'mt-4 text-center text-lg text-green-400';
+                } else {
+                    breakContent.textContent = 'Failed to generate plan.';
+                }
+
+            } catch (error) {
+                console.error('Gemini Break Plan Error:', error);
+                breakContent.textContent = 'Failed to generate plan. Please try again.';
+            } finally {
+                breakButton.disabled = false;
+            }
+        });
+
+        // Comparison report generation
+        async function generateComparisonReport(age, screenTime, device) {
+            const ageGroup = getAgeGroup(parseInt(age));
+            const numericScreenTime = parseFloat(screenTime);
+            
+            // Simulate saving to comparison data
+            comparisonData.push({
+                username: currentUsername,
+                ageGroup: ageGroup,
+                screenTime: numericScreenTime,
+                device: device,
+                timestamp: new Date().toISOString()
+            });
+
+            // Calculate community average
+            const ageGroupRecords = comparisonData.filter(data => data.ageGroup === ageGroup);
+            const ageGroupTotalTime = ageGroupRecords.reduce((sum, data) => sum + data.screenTime, 0);
+            const ageGroupCount = ageGroupRecords.length;
+            const communityAverage = ageGroupCount > 0 ? ageGroupTotalTime / ageGroupCount : 3.5;
+
+            const reportQuery = `My usage: ${numericScreenTime.toFixed(1)}h. Avg for my group (${ageGroup}): ${communityAverage.toFixed(1)}h (${ageGroupCount} users).
+Output: 
+1. One short paragraph comparing me to the average of my age group.
+2. Also briefly compare my usage to the typical average of a different age group (e.g., adults vs teens) for context.
+3. State one key takeaway.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: reportQuery }] }],
+                systemInstruction: { parts: [{ text: "You are a concise data analyst." }] }
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:3000/api/recommend-gemini', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const result = await response.json();
+                const comparisonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (comparisonText) {
+                    const dashboardContainer = document.getElementById('powerbi-embed-container');
+                    dashboardContainer.innerHTML = `
+                        <h3 class="text-3xl font-bold text-white mb-4 border-b border-teal-900 pb-2 flex items-center text-accent">
+                            <i class="fas fa-users mr-3"></i> Cross-Age Community Comparison
+                        </h3>
+                        <div class="report-content space-y-4 text-gray-200">
+                            ${comparisonText.replace(/\n/g, '<br>')}
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                console.error('Comparison API Error:', error);
+            }
+        }
+
+        // Chart initialization
+        let screenTimeAgeChart = null;
+        let healthImpactsChart = null;
+
+        function initLocalCharts() {
+            const ctx1 = document.getElementById('screenTimeAgeChart');
+            if (ctx1) {
+                if (screenTimeAgeChart) screenTimeAgeChart.destroy();
+                
+                screenTimeAgeChart = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: ['8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18'],
+                        datasets: [
+                            {
+                                label: 'Urban',
+                                data: [1.5, 1.8, 2.2, 2.5, 2.8, 3.2, 3.8, 4.2, 4.5, 4.6, 4.7],
+                                borderColor: '#0D9488',
+                                backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Rural',
+                                data: [2.8, 2.7, 2.7, 3.1, 3.2, 3.4, 3.2, 3.0, 3.1, 3.5, 3.0],
+                                borderColor: '#F97316',
+                                backgroundColor: 'rgba(249, 115, 22, 0.2)',
+                                tension: 0.4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                labels: { color: '#9ca3af' },
+                                position: window.innerWidth < 768 ? 'bottom' : 'top'
+                            }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                grid: { color: '#374151' },
+                                ticks: { color: '#9ca3af', font: { size: window.innerWidth < 480 ? 10 : 12 } },
+                                title: { display: true, text: 'Hrs/Day', color: '#9ca3af' }
+                            },
+                            x: {
+                                grid: { color: '#374151' },
+                                ticks: { color: '#9ca3af', font: { size: window.innerWidth < 480 ? 10 : 12 } },
+                                title: { display: true, text: 'Age', color: '#9ca3af' }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const ctx2 = document.getElementById('healthImpactsChart');
+            if (ctx2) {
+                if (healthImpactsChart) healthImpactsChart.destroy();
+
+                healthImpactsChart = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Anxiety', 'Eye Strain', 'Poor Sleep', 'Obesity Risk', 'None'],
+                        datasets: [
+                            {
+                                label: 'Male',
+                                data: [15, 25, 30, 10, 20],
+                                backgroundColor: '#3b82f6',
+                            },
+                            {
+                                label: 'Female',
+                                data: [20, 22, 28, 15, 15],
+                                backgroundColor: '#ec4899',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                labels: { color: '#9ca3af' },
+                                position: window.innerWidth < 768 ? 'bottom' : 'top'
+                            }
+                        },
+                        scales: {
+                            y: { 
+                                beginAtZero: true,
+                                grid: { color: '#374151' },
+                                ticks: { color: '#9ca3af', font: { size: window.innerWidth < 480 ? 10 : 12 } }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#9ca3af', font: { size: window.innerWidth < 480 ? 9 : 11 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Star rating system
+        const stars = document.querySelectorAll('.star');
+        const ratingInput = document.getElementById('feedback-rating-value');
+
+        stars.forEach((star, index) => {
+            star.addEventListener('click', () => {
+                const value = index + 1;
+                ratingInput.value = value;
+                stars.forEach((s, i) => {
+                    if (i < value) {
+                        s.classList.add('selected');
+                    } else {
+                        s.classList.remove('selected');
+                    }
+                });
+            });
+        });
+
+        // Feedback form submission
+        document.getElementById('feedback-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const rating = document.getElementById('feedback-rating-value').value;
+            const suggestion = document.getElementById('suggestion').value;
+
+            if (rating === '0') {
+                alert('Please select a rating before submitting.');
+                return;
+            }
+
+            const statusMsg = document.getElementById('feedback-status-message');
+            statusMsg.textContent = '✨ Analyzing your feedback...';
+            statusMsg.className = 'mt-4 text-center text-lg text-yellow-400';
+            statusMsg.classList.remove('hidden');
+
+            // AI categorization
+            const categorizationPrompt = `Analyze this feedback and provide:
+1. Sentiment: Positive, Neutral, or Negative
+2. Category: UI/UX, Feature Request, Bug Report, or General
+
+Feedback: "${suggestion}"
+Rating: ${rating}/5
+
+Respond in format: "Sentiment: X, Category: Y"`;
+
+            const apiUrl = `${BASE_API_URL}/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+            const payload = {
+                contents: [{ parts: [{ text: categorizationPrompt }] }]
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                const analysisText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (analysisText) {
+                    const sentimentMatch = analysisText.match(/Sentiment:\s*(\w+)/i);
+                    const categoryMatch = analysisText.match(/Category:\s*([\w\s\/]+)/i);
+                    
+                    document.getElementById('sentiment-display').textContent = sentimentMatch ? sentimentMatch[1] : 'N/A';
+                    document.getElementById('category-display').textContent = categoryMatch ? categoryMatch[1] : 'N/A';
+                    document.getElementById('categorization-output').classList.remove('hidden');
+                }
+
+                statusMsg.textContent = '✅ Thank you for your feedback! Your input has been recorded.';
+                statusMsg.className = 'mt-4 text-center text-lg text-green-400';
+                
+                // Reset form after 3 seconds
+                setTimeout(() => {
+                    this.reset();
+                    stars.forEach(s => s.classList.remove('selected'));
+                    ratingInput.value = '0';
+                    document.getElementById('categorization-output').classList.add('hidden');
+                    statusMsg.classList.add('hidden');
+                }, 3000);
+
+            } catch (error) {
+                console.error('Feedback API Error:', error);
+                statusMsg.textContent = '✅ Thank you for your feedback!';
+                statusMsg.className = 'mt-4 text-center text-lg text-green-400';
+            }
+        });
+
+        // Responsive chart re-rendering on window resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                // Re-initialize charts with new window dimensions
+                const dashboardView = document.getElementById('dashboard-view');
+                if (dashboardView && !dashboardView.classList.contains('hidden')) {
+                    initLocalCharts();
+                }
+            }, 250); // Debounce resize events
+        });
+    </script>
+</body>
+</html>
